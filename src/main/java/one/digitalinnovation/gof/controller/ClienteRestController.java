@@ -1,5 +1,7 @@
 package one.digitalinnovation.gof.controller;
 
+import one.digitalinnovation.gof.dto.ClienteDTO;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import one.digitalinnovation.gof.model.Cliente;
 import one.digitalinnovation.gof.service.ClienteService;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+
 /**
  * Esse {@link RestController} representa nossa <b>Facade</b>, pois abstrai toda
  * a complexidade de integrações (Banco de Dados H2 e API do ViaCEP) em uma
@@ -26,28 +32,38 @@ import one.digitalinnovation.gof.service.ClienteService;
 public class ClienteRestController {
 
 	@Autowired
+	private ModelMapper mapper;
+
+	@Autowired
 	private ClienteService clienteService;
 
+
 	@GetMapping
-	public ResponseEntity<Iterable<Cliente>> buscarTodos() {
-		return ResponseEntity.ok(clienteService.buscarTodos());
+	public ResponseEntity<List<ClienteDTO>> buscarTodos() {
+		List<Cliente> clientes = clienteService.buscarTodos();
+		List<ClienteDTO> clienteDTOs = clientes.stream()
+				.map(cliente -> mapper.map(cliente, ClienteDTO.class))
+				.collect(Collectors.toList());
+		return ResponseEntity.ok(clienteDTOs);
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<Cliente> buscarPorId(@PathVariable Long id) {
-		return ResponseEntity.ok(clienteService.buscarPorId(id));
+	public ResponseEntity<ClienteDTO> buscarPorId(@PathVariable Long id) {
+		return ResponseEntity.ok(mapper.map(clienteService.buscarPorId(id), ClienteDTO.class));
 	}
 
 	@PostMapping
-	public ResponseEntity<Cliente> inserir(@RequestBody Cliente cliente) {
-		clienteService.inserir(cliente);
-		return ResponseEntity.ok(cliente);
+	public ResponseEntity<ClienteDTO> inserir(@RequestBody ClienteDTO clienteDto) {
+		Cliente cliente = mapper.map(clienteDto, Cliente.class);
+		Cliente clienteSalvo = clienteService.inserir(cliente);
+		return ResponseEntity.ok(mapper.map(clienteSalvo, ClienteDTO.class));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<Cliente> atualizar(@PathVariable Long id, @RequestBody Cliente cliente) {
-		clienteService.atualizar(id, cliente);
-		return ResponseEntity.ok(cliente);
+	public ResponseEntity<ClienteDTO> atualizar(@PathVariable Long id, @RequestBody ClienteDTO clienteDto) {
+		Cliente cliente = mapper.map(clienteDto, Cliente.class);
+		Cliente clienteAtualizado = clienteService.atualizar(id, cliente);
+		return ResponseEntity.ok(mapper.map(clienteAtualizado, ClienteDTO.class));
 	}
 
 	@DeleteMapping("/{id}")
